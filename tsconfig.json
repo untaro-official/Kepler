@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+      "target": "ES2018",
+      "module": "esnext",
+      "outDir": "./dist",
+      "rootDir": "./",
+      "strict": true,
+      "esModuleInterop": true,
+      "experimentalDecorators": true
+    },
+    "include": [
+      "src/**/*.ts" // Include the public folder
+    ],
+    "exclude": [
+      "node_modules",
+      "**/dist"
+    ]
+  }
+  

@@ -71,10 +71,11 @@ function sharedZoomingDecorator(value: any, name: string, descriptor: PropertyDe
 abstract class D3Map {
     protected svg:d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
     protected g:d3.Selection<SVGGElement, unknown, HTMLElement, any>;
-    protected projection: d3.GeoProjection | undefined;
-    protected path: d3.GeoPath<any, d3.GeoPermissibleObjects> | undefined;
+    protected projection!: d3.GeoProjection;
+    protected path!: d3.GeoPath<any, d3.GeoPermissibleObjects>;
     protected static width: Readonly<number> = 900;
     protected static height: Readonly<number> = 500;
+    protected axis!:{x: boolean, y: boolean};
 
     constructor() {
         this.svg = d3.select("#map-container")
@@ -115,12 +116,13 @@ abstract class D3Map {
     // Functionality methods
     protected dragStart(event: any): void {
     }
-    protected dragging(event: any, axis: {x: boolean, y: boolean}): void {
-        const rotate = this.projection!.rotate();
-        const k = 75 / this.projection!.scale();
-        this.projection!.rotate([
-            axis.x ? rotate[0] + event.dx * k : 0,
-            axis.y ? rotate[1] - event.dy * k : 0
+
+    protected dragging(event: any): void {
+        const rotate = this.projection.rotate();
+        const k = 75 / this.projection.scale();
+        this.projection.rotate([
+            this.axis.x ? rotate[0] + event.dx * k : 0,
+            this.axis.y ? rotate[1] - event.dy * k : 0
         ])
         this.svg.selectAll("path")
                     .attr("d", this.path as any)
@@ -138,21 +140,21 @@ abstract class D3Map {
         this.g.attr("transform", event.transform);
     }
 
-    // protected clickedOnObject(event: any, d: any):void {
-    //     console.log(event);
-    //     // Get current rotate position
-    //     const currentRotate = this.projection!.rotate();
-    //     // Find accurate rotation coefficient based on scale of map
-    //     const k = 75 / this.projection!.scale();
-    //     // Find local center of the map
-    //     const localCenter = {x: D3Map.width / 2, y:D3Map.height / 2};
-    //     // Find x,y needed in order to rotate the object to localCenter
-    //     const objectLocalCenterPos = {x: localCenter.x - event.clientX, y: localCenter.y - event.clientY}
-    //     console.log(objectLocalCenterPos);
-    //     const selectedPath = this.g.select(`#${event.target.id}`).;
-    //     // const pathCentroid = this.path?.centroid();
+    protected clickedOnObject(event: any):void {
+        // Get GeoPath object
+        const pathObject = event.target.__data__;
 
-    // }
+        const center = d3.geoCentroid(pathObject);
+
+        const rotation:[number, number, number] = [
+            this.axis.x ? center[0] * - 1 : 0,
+            this.axis.y ? center[1] * - 1 : 0,
+            0
+        ]
+        this.projection.rotate(rotation);
+        this.svg.selectAll("path")
+                    .attr("d", this.path as any);
+    }
 
 
 }
@@ -164,6 +166,7 @@ class D3MapOrtographic extends D3Map {
 
     this.projection = d3.geoOrthographic();
     this.path = d3.geoPath(this.projection);
+    this.axis = {x: true, y: true};
 
         this.setUp();
 
@@ -171,7 +174,7 @@ class D3MapOrtographic extends D3Map {
             (d3.drag() as DragBehavior<SVGSVGElement, unknown, unknown>)
                 .on("start", (event) => this.dragStart(event))
                 .on("drag", (event) =>
-                this.dragging(event, {x: true, y: true}))
+                this.dragging(event))
                 .on("end", (event) => this.dragEnd(event))
             )
                     
@@ -182,7 +185,7 @@ class D3MapOrtographic extends D3Map {
                     .translateExtent([[0, 0], [D3Map.width, D3Map.height]])
             )    
 
-        // this.svg.on("click", (event, d) => this.clickedOnObject(event, d));
+        this.svg.on("click", (event) => this.clickedOnObject(event));
     
    }
 
@@ -195,6 +198,7 @@ class D3MapD2 extends D3Map {
 
         this.projection = d3.geoNaturalEarth1()
         this.path = d3.geoPath(this.projection);
+        this.axis = {x: true, y: false};
 
                 this.setUp();
     
@@ -202,7 +206,7 @@ class D3MapD2 extends D3Map {
                     (d3.drag() as any)
                         .on("start", (event:any ) => this.dragStart(event))
                         .on("drag", (event:any ) =>
-                        this.dragging(event, {x: true, y: false}))
+                        this.dragging(event))
                         .on("end", (event:any ) => this.dragEnd(event))
                     )
 
@@ -213,7 +217,7 @@ class D3MapD2 extends D3Map {
                             .translateExtent([[0, 0], [D3Map.width, D3Map.height]])
                     )
 
-                    // this.svg.on("click", (event, d) => this.clickedOnObject(event, d));
+                    this.svg.on("click", (event) => this.clickedOnObject(event));
                 
 
     }

@@ -27,6 +27,8 @@ type ZoomType = {
     level: ZoomLevel;
 }
 
+type RouteSelected = {index: number, objectID: string}[]
+
 
 var data: Topology<Objects<GeoJsonProperties>>;
 var data_oceans: Topology<Objects<GeoJsonProperties>>;
@@ -37,6 +39,7 @@ class MapManager {
     private static currentLoadedMap: D3Map | null = null;
     private zoomLevel: number = 1;
     static mapType: TypeOfD3Map;
+    static routeSelected: RouteSelected = [];
 
     constructor(mapFactory: new () => D3Map = D3MapD2) {
        if(MapManager.currentLoadedMap === null) MapManager.currentLoadedMap = new mapFactory();
@@ -56,6 +59,25 @@ class MapManager {
     setZoomLevel(zoomLevel: number) {
         this.zoomLevel = zoomLevel
     };
+
+    // Add to routeSelected list
+    static appendRoute(objectID: string) {
+        const isEmpty = this.routeSelected.length === 0;
+
+        // Check if list is empty
+        if(isEmpty) return this.routeSelected.push({index: 0, objectID});
+
+        // Get next index in list
+        const nextIndex = 
+            this.routeSelected[this.routeSelected.length - 1].index + 1;
+        
+        // Append next route
+        this.routeSelected.push(
+            {index: nextIndex, objectID}
+        )
+        
+
+    }
 
 }
 
@@ -127,10 +149,6 @@ abstract class D3Map {
     protected dragging(event: any): void {
         const rotate = this.projection.rotate();
         const k = 75 / this.projection.scale();
-        // this.projection.rotate([
-        //     this.axis.x ? rotate[0] + event.dx * k : 0,
-        //     this.axis.y ? rotate[1] - event.dy * k : 0
-        // ])
         this.projection.rotate([
             rotate[0] + event.dx * k,
             MapManager.mapType === TypeOfD3Map.D2 ? 0 : rotate[1] - event.dy * k
@@ -139,8 +157,8 @@ abstract class D3Map {
                     .attr("d", this.path as any)
     };
     protected dragEnd(event: any): void {
-        this.g.selectAll("path")
-                .attr("class", "");
+        // this.g.selectAll("path")
+        //         .attr("class", "");
     }
     @sharedZoomingDecorator
     protected zooming(event: any): void {
@@ -152,35 +170,60 @@ abstract class D3Map {
     }
 
     protected clickedOnObject(event: any):void {
+
         // Get GeoPath object
         const pathObject:d3.ExtendedFeature = event.target.__data__;
 
+        // Check if GeoPath object exists on the click
+        if(!(!!pathObject)) return;
+
+        // Determine if GeoPath object is country or state
+        const objectType = pathObject.id ? "country" :
+                            pathObject.properties?.name ? "state" :
+                                null;
+        
+        // Extra check for nullness
+        if(objectType === null) return;
+
+        // Determine the selector to be used
+        const selector:{identificator: string, queryString: string} = 
+            objectType === "country" ? {identificator: pathObject.id, queryString: `#${pathObject.id}`}
+             : {identificator: pathObject.properties?.name, queryString: `[name="` + pathObject.properties?.name + `"]`};
+
+        // Find the center of a path
         const center = d3.geoCentroid(pathObject);
 
+        // Determine the rotation needed to center a path
         const rotation:[number, number, number] = [
             center[0] * - 1,
             MapManager.mapType === TypeOfD3Map.D2 ? 0 : center[1] * - 1,
             0
         ]
-        // this.projection.rotate(rotation);
-        const projectionObj = this.projection;
-        const svgObj = this.svg;
-        const pathObj = this.path;
+        
+        // References to projection, svg and path in order to use them
+        // within functions with context
+        const projectionRef = this.projection;
+        const svgRef = this.svg;
+        const pathRef = this.path;
+        // Call rotation and animation functions
         d3.transition()
             .duration(1000)
             .tween("rotate",  function() {
-                var r = d3.interpolate(projectionObj.rotate(), rotation);
+                var r = d3.interpolate(projectionRef.rotate(), rotation);
                 return function(t) {
                     var easedT = d3.easeCubicOut(t);
-                    projectionObj.rotate(r(easedT));
-                    svgObj.selectAll("path")
-                            .attr("d", pathObj as any);
+                    projectionRef.rotate(r(easedT));
+                    svgRef.selectAll("path")
+                            .attr("d", pathRef as any);
                 }
             })
 
         // Modify anything related to the path
-        this.svg.select(`#${pathObject.id}`)
-                    .attr("class", "clicked");      
+        this.svg.select(selector.queryString)
+            .classed("clicked", true);
+        
+        MapManager.appendRoute(selector.identificator)
+
     }
 
 

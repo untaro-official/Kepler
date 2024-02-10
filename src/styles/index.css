@@ -23,6 +23,34 @@ select {
     top: 50px;
     left: 50px;
 }
+#route-selected-container {
+    position: absolute;
+    bottom: 50px;
+    left: 50px;
+    border: 3px solid black;
+    padding: 25px;
+}
+#route-selected-container h3 {
+    font-family: 'Courier New', Courier, monospace;
+}
+#route-selected-container ol {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+.route-selected {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.route-selected-color {
+    width: 20px;
+    height: 5px;
+    background-color: red;
+}
+.route-selected-code {
+    margin: 0 5px;
+}
 .boundary {
     stroke: black;
     stroke-width: .5px;

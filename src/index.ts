@@ -7,9 +7,11 @@ import { FeatureCollection, GeoJsonProperties, Geometry, Feature, } from 'geojso
 
 
 enum TypeOfD3Map {
-    ORTHOGRAPHIC = 'ortographic',
-    D2 = 'd2'
+    D2 = "d2",
+    ORTOGRAPHIC = "ortographic"
 }
+
+
 
 enum ZoomLevel {
     // Only show continents
@@ -31,17 +33,23 @@ var data_oceans: Topology<Objects<GeoJsonProperties>>;
 var manager:MapManager;
 
 class MapManager {
+
     private static currentLoadedMap: D3Map | null = null;
     private zoomLevel: number = 1;
+    static mapType: TypeOfD3Map;
+
     constructor(mapFactory: new () => D3Map = D3MapD2) {
        if(MapManager.currentLoadedMap === null) MapManager.currentLoadedMap = new mapFactory();
+       MapManager.mapType = TypeOfD3Map.D2;
     }
 
-    newD3MapInstance(mapFactory: new () => D3Map) {
+    newD3MapInstance(mapFactory: new () => D3Map, mapType: TypeOfD3Map) {
         // Destroy current map instance;
         d3.selectAll("svg").remove();
         // Create new map instance;
         MapManager.currentLoadedMap = new mapFactory();
+        // Assign mapType
+        MapManager.mapType = mapType;
     }
 
     getZoomLevel() {return this.zoomLevel};
@@ -75,7 +83,6 @@ abstract class D3Map {
     protected path!: d3.GeoPath<any, d3.GeoPermissibleObjects>;
     protected static width: Readonly<number> = 900;
     protected static height: Readonly<number> = 500;
-    protected axis!:{x: boolean, y: boolean};
 
     constructor() {
         this.svg = d3.select("#map-container")
@@ -120,9 +127,13 @@ abstract class D3Map {
     protected dragging(event: any): void {
         const rotate = this.projection.rotate();
         const k = 75 / this.projection.scale();
+        // this.projection.rotate([
+        //     this.axis.x ? rotate[0] + event.dx * k : 0,
+        //     this.axis.y ? rotate[1] - event.dy * k : 0
+        // ])
         this.projection.rotate([
-            this.axis.x ? rotate[0] + event.dx * k : 0,
-            this.axis.y ? rotate[1] - event.dy * k : 0
+            rotate[0] + event.dx * k,
+            MapManager.mapType === TypeOfD3Map.D2 ? 0 : rotate[1] - event.dy * k
         ])
         this.svg.selectAll("path")
                     .attr("d", this.path as any)
@@ -142,18 +153,34 @@ abstract class D3Map {
 
     protected clickedOnObject(event: any):void {
         // Get GeoPath object
-        const pathObject = event.target.__data__;
+        const pathObject:d3.ExtendedFeature = event.target.__data__;
 
         const center = d3.geoCentroid(pathObject);
 
         const rotation:[number, number, number] = [
-            this.axis.x ? center[0] * - 1 : 0,
-            this.axis.y ? center[1] * - 1 : 0,
+            center[0] * - 1,
+            MapManager.mapType === TypeOfD3Map.D2 ? 0 : center[1] * - 1,
             0
         ]
-        this.projection.rotate(rotation);
-        this.svg.selectAll("path")
-                    .attr("d", this.path as any);
+        // this.projection.rotate(rotation);
+        const projectionObj = this.projection;
+        const svgObj = this.svg;
+        const pathObj = this.path;
+        d3.transition()
+            .duration(1000)
+            .tween("rotate",  function() {
+                var r = d3.interpolate(projectionObj.rotate(), rotation);
+                return function(t) {
+                    var easedT = d3.easeCubicOut(t);
+                    projectionObj.rotate(r(easedT));
+                    svgObj.selectAll("path")
+                            .attr("d", pathObj as any);
+                }
+            })
+
+        // Modify anything related to the path
+        this.svg.select(`#${pathObject.id}`)
+                    .attr("class", "clicked");      
     }
 
 
@@ -166,7 +193,6 @@ class D3MapOrtographic extends D3Map {
 
     this.projection = d3.geoOrthographic();
     this.path = d3.geoPath(this.projection);
-    this.axis = {x: true, y: true};
 
         this.setUp();
 
@@ -198,7 +224,6 @@ class D3MapD2 extends D3Map {
 
         this.projection = d3.geoNaturalEarth1()
         this.path = d3.geoPath(this.projection);
-        this.axis = {x: true, y: false};
 
                 this.setUp();
     
@@ -252,12 +277,12 @@ window.onload = async () => {
     select.onchange = (ev) => {
         const value = (ev.target as any).value;
         switch(value) {
-            case TypeOfD3Map.ORTHOGRAPHIC: {
-                manager.newD3MapInstance(D3MapOrtographic);
+            case TypeOfD3Map.ORTOGRAPHIC: {
+                manager.newD3MapInstance(D3MapOrtographic, TypeOfD3Map.ORTOGRAPHIC);
                 break;
             }
             case TypeOfD3Map.D2: {
-                manager.newD3MapInstance(D3MapD2);
+                manager.newD3MapInstance(D3MapD2, TypeOfD3Map.D2);
                 break;
             }
         }

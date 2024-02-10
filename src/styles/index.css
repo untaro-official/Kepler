@@ -27,9 +27,9 @@ select {
     stroke: black;
     stroke-width: .5px;
 }
-.path-dragging {
-    transition: .125s;
-}
 path:hover {
+    fill: red!important;
+}
+.clicked {
     fill: red!important;
 }

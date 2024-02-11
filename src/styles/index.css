@@ -7,6 +7,7 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
+    background-color: black;
 }
 * {
     user-select: none;
@@ -17,6 +18,10 @@ body {
 }
 svg {
     cursor: pointer;
+    background-color: lightblue;
+}
+svg > g {
+    border: 1px solid black;
 }
 select {
     position: absolute;
@@ -27,8 +32,9 @@ select {
     position: absolute;
     bottom: 50px;
     left: 50px;
-    border: 3px solid black;
+    border: 3px solid white;
     padding: 25px;
+    color: white;
 }
 #route-selected-container h3 {
     font-family: 'Courier New', Courier, monospace;

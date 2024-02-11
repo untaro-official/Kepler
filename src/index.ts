@@ -1,6 +1,8 @@
 import * as d3 from 'd3';
 import { DragBehavior, ValueFn, ZoomBehavior } from 'd3';
+import {tile, tileWrap} from 'd3-tile';
 import * as topojson from 'topojson-client';
+// import * as d3Tile from 'd3-tile';
 import './styles/index.css';
 import {Topology, Objects} from 'topojson-specification';
 import { FeatureCollection, GeoJsonProperties, Geometry, Feature, } from 'geojson';
@@ -35,6 +37,9 @@ type RouteSelected = {index: number,
 var data: Topology<Objects<GeoJsonProperties>>;
 var data_oceans: Topology<Objects<GeoJsonProperties>>;
 var manager:MapManager;
+
+const url = (x: any, y: any, z: any) =>
+`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/${z}/${x}/${y}${devicePixelRatio > 1 ? "@2x" : ""}?access_token=pk.eyJ1IjoibWJvc3RvY2siLCJhIjoiY2s5ZWRlbTM4MDE0eDNocWJ2aXR2amNmeiJ9.LEyjnNDr_BrxRmI4UDyJAQ`;
 
 class MapManager {
 
@@ -88,7 +93,7 @@ class MapManager {
 
 }
 
-function sharedZoomingDecorator(value: any, name: string, descriptor: PropertyDescriptor) {
+function sharedZoomingDecorator(_target: any, _key: string, descriptor: PropertyDescriptor) {
     const oldDescriptor = descriptor.value;
     descriptor.value = async function(...args: any[]) {
         const result = await oldDescriptor.apply(this, args);
@@ -105,11 +110,14 @@ function sharedZoomingDecorator(value: any, name: string, descriptor: PropertyDe
     return descriptor;
 }
 
+
 abstract class D3Map {
     protected svg:d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
     protected g:d3.Selection<SVGGElement, unknown, HTMLElement, any>;
     protected projection!: d3.GeoProjection;
     protected static path: d3.GeoPath<any, d3.GeoPermissibleObjects>;
+    protected static tile: any;
+    protected image: any;
     protected static width: Readonly<number> = 900;
     protected static height: Readonly<number> = 500;
 
@@ -128,7 +136,7 @@ abstract class D3Map {
 
 
         const setUpG = (classVal: string, data: Feature<Geometry, GeoJsonProperties>[]):void => {
-            this.g.append("g")
+            this.image = this.g.append("g")
                 .attr("class", classVal)
                 .selectAll("boundary")
                 .data(data)
@@ -137,6 +145,14 @@ abstract class D3Map {
                 .attr("id", d => d.id ?? null)
                 .attr("d", D3Map.path as any)
                 .style("fill", "green")
+                .selectAll("image");
+
+            // Set-up tiles
+            D3Map.tile
+                    .extent([[0, 0], [D3Map.width, D3Map.height]])
+                    .tileSize(512)
+                    .clampX(false);
+
         } 
 
         const countries = (topojson.feature(data, data.objects.countries) as FeatureCollection<Geometry, GeoJsonProperties>)
@@ -167,6 +183,17 @@ abstract class D3Map {
     }
     @sharedZoomingDecorator
     protected zooming(event: any): void {
+        const tiles = tile(event.transform);
+
+        this.image = this.image.data(tiles, (d: any) => d)
+                            .join("image")
+                            .attr("xlink:href", (d: any) => 
+                            url(...(tileWrap(d) as [number, number, number])))
+                            .attr("x", ([x]: [number]) => (x + tiles.translate[0]) * tiles.scale)
+                            .attr("y", ([y]: [number]) => (y + tiles.translate[1]) * tiles.scale)
+                            .attr("width", tiles.scale)
+                            .attr("height", tiles.scale)
+
         this.g.attr("transform", event.transform);
     };
     @sharedZoomingDecorator
@@ -261,6 +288,7 @@ class D3MapOrtographic extends D3Map {
 
     this.projection = d3.geoOrthographic();
     D3Map.path = d3.geoPath(this.projection);
+    D3Map.tile = tile();
 
         this.setUp();
 
@@ -292,6 +320,7 @@ class D3MapD2 extends D3Map {
 
         this.projection = d3.geoNaturalEarth1()
         D3Map.path = d3.geoPath(this.projection);
+        D3Map.tile = tile();
 
                 this.setUp();
     

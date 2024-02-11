@@ -27,7 +27,9 @@ type ZoomType = {
     level: ZoomLevel;
 }
 
-type RouteSelected = {index: number, objectID: string}[]
+type RouteSelected = {index: number,
+                        objectID: string,
+                            center: [number, number]};
 
 
 var data: Topology<Objects<GeoJsonProperties>>;
@@ -39,7 +41,7 @@ class MapManager {
     private static currentLoadedMap: D3Map | null = null;
     private zoomLevel: number = 1;
     static mapType: TypeOfD3Map;
-    static routeSelected: RouteSelected = [];
+    static routes: RouteSelected[] = [];
 
     constructor(mapFactory: new () => D3Map = D3MapD2) {
        if(MapManager.currentLoadedMap === null) MapManager.currentLoadedMap = new mapFactory();
@@ -61,22 +63,27 @@ class MapManager {
     };
 
     // Add to routeSelected list
-    static appendRoute(objectID: string) {
-        const isEmpty = this.routeSelected.length === 0;
-
+    static appendRoute(objectID: string, center: [number, number]) {
         // Check if list is empty
-        if(isEmpty) return this.routeSelected.push({index: 0, objectID});
+        const isEmpty = this.routes.length === 0;
+        
+        // If list is empty then push to index 0 and stop
+        if(isEmpty){
+            this.routes.push({index: 0, objectID, center});
+            return;
+        }
 
         // Get next index in list
         const nextIndex = 
-            this.routeSelected[this.routeSelected.length - 1].index + 1;
+            this.routes[this.routes.length - 1].index + 1;
         
         // Append next route
-        this.routeSelected.push(
-            {index: nextIndex, objectID}
+        this.routes.push(
+            {index: nextIndex, objectID, center}
         )
         
-
+        D3Map.createNewLink();
+            
     }
 
 }
@@ -102,7 +109,7 @@ abstract class D3Map {
     protected svg:d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
     protected g:d3.Selection<SVGGElement, unknown, HTMLElement, any>;
     protected projection!: d3.GeoProjection;
-    protected path!: d3.GeoPath<any, d3.GeoPermissibleObjects>;
+    protected static path: d3.GeoPath<any, d3.GeoPermissibleObjects>;
     protected static width: Readonly<number> = 900;
     protected static height: Readonly<number> = 500;
 
@@ -128,8 +135,8 @@ abstract class D3Map {
                 .enter().append("path")
                 .attr("name", d => d.properties?.name)
                 .attr("id", d => d.id ?? null)
-                .attr("d", this.path as any)
-                .style("fill", "lightgreen")
+                .attr("d", D3Map.path as any)
+                .style("fill", "green")
         } 
 
         const countries = (topojson.feature(data, data.objects.countries) as FeatureCollection<Geometry, GeoJsonProperties>)
@@ -154,11 +161,9 @@ abstract class D3Map {
             MapManager.mapType === TypeOfD3Map.D2 ? 0 : rotate[1] - event.dy * k
         ])
         this.svg.selectAll("path")
-                    .attr("d", this.path as any)
+                    .attr("d", D3Map.path as any)
     };
     protected dragEnd(event: any): void {
-        // this.g.selectAll("path")
-        //         .attr("class", "");
     }
     @sharedZoomingDecorator
     protected zooming(event: any): void {
@@ -204,7 +209,7 @@ abstract class D3Map {
         // within functions with context
         const projectionRef = this.projection;
         const svgRef = this.svg;
-        const pathRef = this.path;
+        const pathRef = D3Map.path;
         // Call rotation and animation functions
         d3.transition()
             .duration(1000)
@@ -222,10 +227,29 @@ abstract class D3Map {
         this.svg.select(selector.queryString)
             .classed("clicked", true);
         
-        MapManager.appendRoute(selector.identificator)
+
+        MapManager.appendRoute(selector.identificator, center);
 
     }
 
+    static createNewLink() {
+        const secondLastPath = MapManager.routes[MapManager.routes.length - 2];
+        const firstLastPath = MapManager.routes[MapManager.routes.length - 1];
+        console.log(secondLastPath, firstLastPath);
+        d3.select("svg")
+            .selectAll("path-link")
+            .data([
+                {type: "LineString", 
+                coordinates: [secondLastPath.center, firstLastPath.center]}
+            ])
+            .enter()
+            .append("path")
+                .attr("d", (d) => this.path(d as any))
+                .style("fill", "none")
+                .style("stroke", "orange")
+                .style("stroke-width", 3)
+
+    }
 
 }
 
@@ -235,7 +259,7 @@ class D3MapOrtographic extends D3Map {
     super();
 
     this.projection = d3.geoOrthographic();
-    this.path = d3.geoPath(this.projection);
+    D3Map.path = d3.geoPath(this.projection);
 
         this.setUp();
 
@@ -266,7 +290,7 @@ class D3MapD2 extends D3Map {
         super()
 
         this.projection = d3.geoNaturalEarth1()
-        this.path = d3.geoPath(this.projection);
+        D3Map.path = d3.geoPath(this.projection);
 
                 this.setUp();
     

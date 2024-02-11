@@ -7,18 +7,6 @@ import { FeatureCollection, GeoJsonProperties, Geometry, Feature, } from 'geojso
 import {checkLocalStorage} from './localStorage';
 import Helper from './helper';
 // Projection imports
-// import {
-//     geoAiry,
-//     geoAiryRaw,
-//     geoAitoff,
-//     geoAitoffRaw,
-//     geoArmadillo,
-//     geoArmadilloRaw,
-//     geoAugust,
-//     geoAugustRaw,
-
-
-// } from 'd3-geo-projection';
 import {
     geoAlbers,
     geoAzimuthalEqualArea,
@@ -34,12 +22,6 @@ import {
     geoStereographic,
     geoTransverseMercator,
 } from 'd3-geo';
-
-enum TypeOfD3Map {
-    D2 = "d2",
-    ORTOGRAPHIC = "ortographic",
-    GEOMERCATOR = "geomercator"
-}
 
 enum TypeOfProjection {
     ALBERS_I = "Albers",
@@ -69,7 +51,7 @@ export type RouteSelected = {index: number,
 
 var data: Topology<Objects<GeoJsonProperties>>;
 
-class D3MapTest {
+class D3Map {
     protected svg!:d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
     protected g!:d3.Selection<SVGGElement, unknown, HTMLElement, any>;
     protected projection!: d3.GeoProjection;
@@ -91,9 +73,9 @@ class D3MapTest {
     private setUpVariables = () => {
         this.svg = d3.select("#map-container")
             .append("svg")
-            .attr("viewBox", [0, 0, D3MapTest.width, D3MapTest.height])
-            .attr("width", D3MapTest.width)
-            .attr("height", D3MapTest.height)
+            .attr("viewBox", [0, 0, D3Map.width, D3Map.height])
+            .attr("width", D3Map.width)
+            .attr("height", D3Map.height)
         this.g = this.svg.append("g");
     }
     private setUpStorage = () => {
@@ -128,7 +110,7 @@ class D3MapTest {
             (d3.zoom() as ZoomBehavior<SVGSVGElement, unknown>)
             .on("zoom", (event) => Helper.zooming(event, ctx.g))
             .scaleExtent([1, 20])
-            .translateExtent([[0, 0], [D3MapTest.width, D3MapTest.height]])
+            .translateExtent([[0, 0], [D3Map.width, D3Map.height]])
         )
 
         this.svg.on("click", (event) =>
@@ -181,7 +163,7 @@ window.onload = async () => {
     
     onStartupBeforeMap();
 
-    const map = new D3MapTest();
+    const map = new D3Map();
 
     onStartupAfterMap(map);
 
@@ -192,11 +174,11 @@ const onStartupBeforeMap = () => {
     setUpProjectionMap();
 }
 
-const onStartupAfterMap = (map: D3MapTest) => {
+const onStartupAfterMap = (map: D3Map) => {
     createSelectElement(map);
 }
 
-const createSelectElement = (map: D3MapTest) => {
+const createSelectElement = (map: D3Map) => {
     const dropdown = d3.select("#dropdown")
     
     for(const [key, _value] of typeOfProjection) {

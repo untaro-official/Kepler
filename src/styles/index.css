@@ -55,7 +55,7 @@ select {
     stroke: white;
     stroke-width: .5px;
 }
-path:hover {
+path:not(.path-link):hover {
     fill: red!important;
 }
 .clicked {

@@ -245,9 +245,10 @@ abstract class D3Map {
             .enter()
             .append("path")
                 .attr("d", (d) => this.path(d as any))
+                .attr("class", "path-link")
                 .style("fill", "none")
                 .style("stroke", "orange")
-                .style("stroke-width", 3)
+                .style("stroke-width", 7)
 
     }
 

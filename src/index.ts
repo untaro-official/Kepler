@@ -72,8 +72,10 @@ class MapManager {
         const isEmpty = this.routes.length === 0;
         
         // If list is empty then push to index 0 and stop
+        // As well append to route element
         if(isEmpty){
             this.routes.push({index: 0, objectID, center});
+            D3Map.appendToRoutes(objectID);
             return;
         }
 
@@ -86,7 +88,11 @@ class MapManager {
             {index: nextIndex, objectID, center}
         )
         
+
+        // Create link between paths
         D3Map.createNewLink();
+        // Append to route element
+        D3Map.appendToRoutes(objectID);
             
     }
 
@@ -256,6 +262,18 @@ abstract class D3Map {
                 .style("fill", "none")
                 .style("stroke", "orange")
                 .style("stroke-width", 7)
+
+    }
+
+    static appendToRoutes(objectID: string) {
+        const newLi = d3.select("#route-selected-container > ol")
+            .append("li")
+            .attr("class", "route-selected")
+        newLi.append("div")
+            .attr("class", "route-selected-color")
+        newLi.append("span")
+            .attr("class", "route-selected-code")
+            .text(objectID);
 
     }
 

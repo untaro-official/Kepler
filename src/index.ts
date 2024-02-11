@@ -1,6 +1,5 @@
 import * as d3 from 'd3';
 import { DragBehavior, ValueFn, ZoomBehavior } from 'd3';
-import {tile, tileWrap} from 'd3-tile';
 import * as topojson from 'topojson-client';
 // import * as d3Tile from 'd3-tile';
 import './styles/index.css';
@@ -116,8 +115,6 @@ abstract class D3Map {
     protected g:d3.Selection<SVGGElement, unknown, HTMLElement, any>;
     protected projection!: d3.GeoProjection;
     protected static path: d3.GeoPath<any, d3.GeoPermissibleObjects>;
-    protected static tile: any;
-    protected image: any;
     protected static width: Readonly<number> = 900;
     protected static height: Readonly<number> = 500;
 
@@ -136,7 +133,7 @@ abstract class D3Map {
 
 
         const setUpG = (classVal: string, data: Feature<Geometry, GeoJsonProperties>[]):void => {
-            this.image = this.g.append("g")
+            this.g.append("g")
                 .attr("class", classVal)
                 .selectAll("boundary")
                 .data(data)
@@ -146,12 +143,6 @@ abstract class D3Map {
                 .attr("d", D3Map.path as any)
                 .style("fill", "green")
                 .selectAll("image");
-
-            // Set-up tiles
-            D3Map.tile
-                    .extent([[0, 0], [D3Map.width, D3Map.height]])
-                    .tileSize(512)
-                    .clampX(false);
 
         } 
 
@@ -183,17 +174,6 @@ abstract class D3Map {
     }
     @sharedZoomingDecorator
     protected zooming(event: any): void {
-        const tiles = tile(event.transform);
-
-        this.image = this.image.data(tiles, (d: any) => d)
-                            .join("image")
-                            .attr("xlink:href", (d: any) => 
-                            url(...(tileWrap(d) as [number, number, number])))
-                            .attr("x", ([x]: [number]) => (x + tiles.translate[0]) * tiles.scale)
-                            .attr("y", ([y]: [number]) => (y + tiles.translate[1]) * tiles.scale)
-                            .attr("width", tiles.scale)
-                            .attr("height", tiles.scale)
-
         this.g.attr("transform", event.transform);
     };
     @sharedZoomingDecorator
@@ -288,7 +268,6 @@ class D3MapOrtographic extends D3Map {
 
     this.projection = d3.geoOrthographic();
     D3Map.path = d3.geoPath(this.projection);
-    D3Map.tile = tile();
 
         this.setUp();
 
@@ -320,7 +299,6 @@ class D3MapD2 extends D3Map {
 
         this.projection = d3.geoNaturalEarth1()
         D3Map.path = d3.geoPath(this.projection);
-        D3Map.tile = tile();
 
                 this.setUp();
     

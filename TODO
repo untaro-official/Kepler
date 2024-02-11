@@ -1,0 +1,1 @@
+1 = "Heavy data? It is a good practice to apply this transformation on the geoJson file directly -> avoid loading time in the browser."

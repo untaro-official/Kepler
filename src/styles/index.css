@@ -16,6 +16,9 @@ body {
     width: 900px;
     height: 600px;
 }
+canvas {
+    border: 1px solid white;
+}
 svg {
     cursor: pointer;
     background-color: lightblue;

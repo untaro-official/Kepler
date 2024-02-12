@@ -10,18 +10,32 @@
 
 </head>
 <body>
-        <select id="dropdown">
-        
-        </select>
         <div id="route-selected-container">
             <h3>Routes</h3>
             <ol>
             </ol>
         </div>
         <div id="settings-container">
-            <button id="settings">
+            <button>
             
             </button>
+            <h3>Map Settings</h3>
+            <div class="settings-option">
+                <span>Map Type: </span>
+                <select id="settings-dropdown">
+
+                </select>
+            </div>
+            <div class="settings-option">
+                <span>Zoom:</span>
+                <div id="settings-rotation">
+                    <label>X Axis</label>
+                    <input type="checkbox" id="settings-rotation-x" checked>
+
+                    <label>Y Axis</label>
+                    <input type="checkbox" id="settings-rotation-y">
+                </div>
+            </div>
         </div>
         <div id="map-container"></div>
 </body>

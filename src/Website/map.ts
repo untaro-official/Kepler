@@ -23,25 +23,12 @@ import {
     geoStereographic,
     geoTransverseMercator,
 } from 'd3-geo';
+import { IMapSettings, TypeOfProjection } from './typings';
+import { DefaultMapSettings } from './defaults';
 
-enum TypeOfProjection {
-    ALBERS_I = "Albers",
-    AZIMUTHAL_I = "Azimuthal I",
-    AZIMUTHAL_II = "Azimuthal II",
-    CONIC_I = "Conic I",
-    CONIC_II = "Conic II",
-    CONIC_III = "Conic III",
-    RECTANGULAR = "Rectangular",
-    GNOMONIC = "Gnomonic",
-    MERCATOR_I = "Mercator I",
-    MERCATOR_II = "Mercator II",
-    NATURAL_EARTH = "Natural Earth",
-    ORTOGRAPHIC = "Orthographic",
-    STEREOGRAPHIC = "Stereographic"
-}
 
 const typeOfProjection = 
-    new Map<TypeOfProjection,  () => d3.GeoProjection>();
+    new Map<IMapSettings['currentProjection'],  () => d3.GeoProjection>();
 
 
 
@@ -51,6 +38,8 @@ export type RouteSelected = {index: number,
 
 
 var data: Topology<Objects<GeoJsonProperties>>;
+
+var settings: IMapSettings = DefaultMapSettings;
 
 class D3Map {
     protected svg!:d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
@@ -99,7 +88,8 @@ class D3Map {
             g: this.g,
             projection: this.projection,
             path: this.path,
-            routes: this.routes
+            routes: this.routes,
+            settings: settings
         }
 
         this.svg.call(
@@ -120,7 +110,7 @@ class D3Map {
     /* SetUp Methods */
 
     private buildDefault() {
-        this.projection = (typeOfProjection.get(TypeOfProjection.NATURAL_EARTH) as () => d3.GeoProjection)();
+        this.projection = (typeOfProjection.get(settings.currentProjection) as () => d3.GeoProjection)();
         this.path = d3.geoPath(this.projection);
 
         const countries = (topojson.feature(data, data.objects.countries) as FeatureCollection<Geometry, GeoJsonProperties>)
@@ -181,7 +171,7 @@ const onStartupAfterMap = (map: D3Map) => {
 }
 
 const createSelectElement = (map: D3Map) => {
-    const dropdown = d3.select("#dropdown")
+    const dropdown = d3.select("#settings-dropdown")
     
     for(const [key, _value] of typeOfProjection) {
         const option = dropdown.append("option")
@@ -214,4 +204,4 @@ const setUpProjectionMap = () => {
     typeOfProjection.set(TypeOfProjection.STEREOGRAPHIC, geoStereographic);
 }
 
-export default {};
+export {settings};

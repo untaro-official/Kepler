@@ -1,3 +1,7 @@
+@font-face {
+    font-family: njal;
+    src: url("../../public/assets/fonts/njal.otf");
+}
 html, body {
     margin: 0;
     padding: 0;
@@ -26,11 +30,6 @@ svg {
 }
 svg > g {
     border: 1px solid black;
-}
-select {
-    position: absolute;
-    top: 50px;
-    left: 50px;
 }
 #route-selected-container {
     position: absolute;
@@ -74,12 +73,15 @@ path:not(.path-link):hover {
 #settings-container {
     width: 300px;
     height: 100%;
-    background-color: rgb(0, 0, 0, 0.5);
+    background-color: rgb(0, 0, 0, 0.8);
     border-left: 2px solid white;
     position: absolute;
     right: -300px;
     top: 0;
     transition: 0.25s;
+    display: flex;
+    flex-direction: column;
+    color: white;
 }
 #settings-container.active {
     right: 0;
@@ -101,4 +103,32 @@ path:not(.path-link):hover {
 }
 #settings-container.active > button {
     right: 20px;
+    background-image: url("../../public/assets/burger-close.svg");
+}
+#settings-container > h3 {
+    text-align: center;
+    text-decoration: underline;
+    font-family: njal;
+    letter-spacing: 2px;
+    font-size: 20px;
+}
+.settings-option {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin: 10px 20px;
+}
+.settings-option *:not(h3) {
+    font-family:monospace;
+}
+.settings-option > span {
+    margin-right: 10px;
+}
+#settings-rotation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#settings-rotation > * {
+    vertical-align: middle;
 }

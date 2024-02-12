@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import type { RouteSelected } from './map';
+import { IMapSettings } from './typings';
 
 export module Helper{
     type ICtx = {
@@ -8,6 +9,7 @@ export module Helper{
         projection: d3.GeoProjection;
         path: d3.GeoPath<any, d3.GeoPermissibleObjects>;
         routes: RouteSelected[];
+        settings: IMapSettings;
     }
 
     /* Drag functions */
@@ -16,8 +18,8 @@ export module Helper{
         const rotate = ctx.projection.rotate();
         const k = 75 / ctx.projection.scale();
         ctx.projection.rotate([
-            rotate[0] + event.dx * k,
-            rotate[1] + event.dy * k
+            ctx.settings.rotation.rotationX ?  rotate[0] + event.dx * k : 0,
+            ctx.settings.rotation.rotationY ? rotate[1] + event.dy * k : 0
         ])
         ctx.svg.selectAll("path")
                     .attr("d", ctx.path as any)

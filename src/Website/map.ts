@@ -1,11 +1,12 @@
 import * as d3 from 'd3';
 import { DragBehavior, ValueFn, ZoomBehavior } from 'd3';
 import * as topojson from 'topojson-client';
-import './styles/index.css';
+import '../styles/index.css';
 import {Topology, Objects} from 'topojson-specification';
 import { FeatureCollection, GeoJsonProperties, Geometry, Feature, } from 'geojson';
-import {checkLocalStorage} from './localStorage';
-import Helper from './helper';
+import {Helper} from './helper';
+import domSetup from './dom';
+
 // Projection imports
 import {
     geoAlbers,
@@ -83,7 +84,7 @@ class D3Map {
         const optionsStorage = window.localStorage.getItem("options");
 
         // Validate local storage
-        const isValidStorage = checkLocalStorage(optionsStorage);
+        const isValidStorage = Helper.checkLocalStorage(optionsStorage);
         // Do different things depending on whether we have valid local storage or not
         if (!isValidStorage) {
             this.buildDefault();
@@ -153,12 +154,13 @@ class D3Map {
 
 window.onload = async () => {
 
-    var fileCombined = "combined.json";
+    // Setup dom
+    domSetup();
 
-    data = await d3.json(fileCombined)
+    data = await d3.json("combined.json")
         .then((data) => data as Topology<Objects<GeoJsonProperties>>)
         .then((data) => data)
-        .catch((err) => {throw new Error(`Couldn't load ${fileCombined} data: ${err}`)})
+        .catch((err) => {throw new Error(`Couldn't load ${"combined.json"} data: ${err}`)})
 
     
     onStartupBeforeMap();
@@ -211,3 +213,5 @@ const setUpProjectionMap = () => {
     typeOfProjection.set(TypeOfProjection.ORTOGRAPHIC, geoOrthographic);
     typeOfProjection.set(TypeOfProjection.STEREOGRAPHIC, geoStereographic);
 }
+
+export default {};

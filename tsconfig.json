@@ -7,7 +7,8 @@
       "strict": true,
       "esModuleInterop": true,
       "experimentalDecorators": true,
-      "moduleResolution": "Node"
+      "moduleResolution": "Node",
+      "resolveJsonModule": true
     },
     "include": [
       "src/**/*.ts" // Include the public folder

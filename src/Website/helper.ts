@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
-import { RouteSelected } from '.';
+import type { RouteSelected } from './map';
 
-module Helper{
+export module Helper{
     type ICtx = {
         svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
         g: d3.Selection<SVGGElement, unknown, HTMLElement, any>;
@@ -144,7 +144,12 @@ module Helper{
             .attr("class", "route-selected-code")
             .text(objectID);
     }
+
+    /* Storage functions */
+    export function checkLocalStorage(options: any): boolean {
+        return false;
+    }
 }
 
-export default Helper;
+export default {};
 
